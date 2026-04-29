@@ -10,11 +10,15 @@ Spring Boot (Java 17) ile geliştirilmiş basit bir **Task CRUD REST API**.
 
 - [Proje Özeti](#proje-özeti)
 - [Gereksinimler](#gereksinimler)
-- [Kurulum ve Çalıştırma](#kurulum-ve-çalıştırma)
-- [Konfigürasyon](#konfigürasyon)
-- [API](#api)
-- [Build ve Test](#build-ve-test)
+- [Kurulum](#kurulum)
+- [Çalıştırma](#çalıştırma)
+- [Test](#test)
+- [Yapılandırma](#yapılandırma)
+- [Swagger / OpenAPI](#swagger--openapi)
 - [Klasör Yapısı](#klasör-yapısı)
+- [API](#api)
+- [Katkı](#katkı)
+- [Lisans](#lisans)
 - [Release / Versiyonlama](#release--versiyonlama)
 
 ## Proje Özeti
@@ -30,9 +34,17 @@ Bu proje, `Task` entity’si için CRUD işlemlerini sağlayan bir REST API suna
 - Java 17
 - Maven (veya projedeki Maven Wrapper: `./mvnw`)
 
-## Kurulum ve Çalıştırma
+## Kurulum
 
-### Uygulamayı çalıştırma
+```bash
+./mvnw -q -DskipTests package
+```
+
+> Not: Maven Wrapper (`./mvnw`) repoya dahil olduğu için ayrıca Maven kurmadan da build alabilirsiniz.
+
+## Çalıştırma
+
+### Geliştirme modunda
 
 ```bash
 ./mvnw spring-boot:run
@@ -40,7 +52,7 @@ Bu proje, `Task` entity’si için CRUD işlemlerini sağlayan bir REST API suna
 
 Uygulama varsayılan olarak `http://localhost:8080` üzerinde ayağa kalkar (`server.port=8080`).
 
-### Jar olarak çalıştırma
+### Jar olarak
 
 ```bash
 ./mvnw clean package
@@ -56,29 +68,52 @@ H2 Console aktiftir:
 - Kullanıcı adı: `sa` (`spring.datasource.username`)
 - Şifre: (boş) (`spring.datasource.password`)
 
-## Konfigürasyon
+## Test
+
+```bash
+./mvnw -q test
+```
+
+Alternatif olarak:
+
+```bash
+./mvnw -q verify
+```
+
+## Yapılandırma
 
 Konfigürasyon dosyası: `src/main/resources/application.properties`
 
-Varsayılan ayarlar:
+Sık kullanılan ayarlar:
 
-- Uygulama adı: `spring.application.name=task-api`
 - Port: `server.port=8080`
-- H2 (in-memory) datasource:
+- H2 datasource:
   - `spring.datasource.url=jdbc:h2:mem:taskdb`
-  - `spring.datasource.driver-class-name=org.h2.Driver`
   - `spring.datasource.username=sa`
   - `spring.datasource.password=`
 - JPA:
   - `spring.jpa.hibernate.ddl-auto=update`
-  - `spring.jpa.show-sql=false`
 - H2 Console:
   - `spring.h2.console.enabled=true`
   - `spring.h2.console.path=/h2-console`
-- Logging:
-  - `logging.level.root=INFO`
-  - `logging.level.com.example.taskapi=DEBUG`
-  - `logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n`
+
+> Not: Logging seviyeleri ve console pattern ayarları da aynı dosyada bulunur.
+
+## Swagger / OpenAPI
+
+Bu projede Swagger/OpenAPI bağımlılığı bulunmuyor (pom.xml’de `springdoc-openapi` vb. yok). İsterseniz ekleyip `/swagger-ui` üzerinden dokümantasyon yayınlayabilirsiniz.
+
+## Klasör Yapısı
+
+- `src/main/java/com/example/taskapi`
+  - `TaskApiApplication`: Spring Boot main class
+  - `TaskController`: REST controller (`/api/tasks`)
+  - `TaskService`: iş mantığı
+  - `TaskRepository`: JPA repository
+  - `Task`: JPA entity
+  - `BadRequestException`, `TaskNotFoundException`: HTTP status mapping
+- `src/main/resources/application.properties`: uygulama konfigürasyonu
+- `src/test/java/com/example/taskapi/TaskControllerTest`: controller seviyesinde MockMvc testleri
 
 ## API
 
@@ -154,37 +189,14 @@ Task silme:
 curl -i -X DELETE "http://localhost:8080/api/tasks/42"
 ```
 
-## Build ve Test
+## Katkı
 
-### Build / Paketleme
+- Değişiklikler için küçük ve odaklı PR’lar tercih edilir.
+- Test eklenebilen değişikliklerde `./mvnw test` çıktısı paylaşılması beklenir.
 
-```bash
-./mvnw clean package
-```
+## Lisans
 
-### Test
-
-```bash
-./mvnw test
-```
-
-Alternatif olarak:
-
-```bash
-./mvnw clean verify
-```
-
-## Klasör Yapısı
-
-- `src/main/java/com/example/taskapi`
-  - `TaskApiApplication`: Spring Boot main class
-  - `TaskController`: REST controller (`/api/tasks`)
-  - `TaskService`: iş mantığı
-  - `TaskRepository`: JPA repository
-  - `Task`: JPA entity
-  - `BadRequestException`, `TaskNotFoundException`: HTTP status mapping
-- `src/main/resources/application.properties`: uygulama konfigürasyonu
-- `src/test/java/com/example/taskapi/TaskControllerTest`: controller seviyesinde MockMvc testleri
+Bu repoda lisans dosyası bulunmuyor. Eğer açık kaynak olarak paylaşılacaksa bir `LICENSE` dosyası ekleyip burada belirtmeniz önerilir.
 
 ## Release / Versiyonlama
 

@@ -3,23 +3,16 @@ package com.example.taskapi;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+@AutoConfigureMockMvc
 class TaskControllerTest {
 
     @Autowired
@@ -28,42 +21,52 @@ class TaskControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private TaskRepository repository;
-
     @Test
     void listReturnsTasks() throws Exception {
-        Task t = new Task("learn spring", "do it", false);
-        t.setId(1L);
-        when(repository.findAll()).thenReturn(List.of(t));
+        Task created = new Task("learn spring", "do it", false);
+
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(created)))
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/tasks"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].id").isNumber())
                 .andExpect(jsonPath("$[0].title").value("learn spring"));
     }
 
     @Test
     void listFiltersByCompletedTrue() throws Exception {
-        Task t = new Task("done", "", true);
-        t.setId(2L);
-        when(repository.findByCompleted(true)).thenReturn(List.of(t));
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("done", "", true))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("todo", "", false))))
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/tasks").queryParam("completed", "true"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(2))
                 .andExpect(jsonPath("$[0].completed").value(true));
     }
 
     @Test
     void listFiltersByCompletedFalse() throws Exception {
-        Task t = new Task("todo", "", false);
-        t.setId(3L);
-        when(repository.findByCompleted(false)).thenReturn(List.of(t));
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("done", "", true))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("todo", "", false))))
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/tasks").queryParam("completed", "false"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(3))
                 .andExpect(jsonPath("$[0].completed").value(false));
     }
 
@@ -75,25 +78,21 @@ class TaskControllerTest {
 
     @Test
     void getByIdReturns404WhenMissing() throws Exception {
-        when(repository.findById(eq(99L))).thenReturn(Optional.empty());
-
         mockMvc.perform(get("/api/tasks/99"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void createReturns201() throws Exception {
+    void createReturns201AndLocationHeader() throws Exception {
         Task input = new Task("write tests", "junit", false);
-        Task saved = new Task("write tests", "junit", false);
-        saved.setId(42L);
-        when(repository.save(any(Task.class))).thenReturn(saved);
 
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/tasks/42"))
-                .andExpect(jsonPath("$.id").value(42));
+                .andExpect(header().string("Location", org.hamcrest.Matchers.matchesPattern("/api/tasks/\\d+")))
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.title").value("write tests"));
     }
 
     @Test
@@ -107,12 +106,48 @@ class TaskControllerTest {
     }
 
     @Test
+    void updateReturns200() throws Exception {
+        String location = mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("before", "", false))))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getHeader("Location");
+
+        mockMvc.perform(put(location)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("after", "updated", true))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("after"))
+                .andExpect(jsonPath("$.completed").value(true));
+    }
+
+    @Test
+    void updateReturns404WhenMissing() throws Exception {
+        mockMvc.perform(put("/api/tasks/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("after", "updated", true))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void deleteReturns204() throws Exception {
-        when(repository.existsById(1L)).thenReturn(true);
+        String location = mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new Task("to delete", "", false))))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getHeader("Location");
 
-        mockMvc.perform(delete("/api/tasks/1"))
+        mockMvc.perform(delete(location))
                 .andExpect(status().isNoContent());
+    }
 
-        verify(repository).deleteById(1L);
+    @Test
+    void deleteReturns404WhenMissing() throws Exception {
+        mockMvc.perform(delete("/api/tasks/999"))
+                .andExpect(status().isNotFound());
     }
 }
