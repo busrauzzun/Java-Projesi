@@ -44,6 +44,36 @@ class TaskControllerTest {
     }
 
     @Test
+    void listFiltersByCompletedTrue() throws Exception {
+        Task t = new Task("done", "", true);
+        t.setId(2L);
+        when(repository.findByCompleted(true)).thenReturn(List.of(t));
+
+        mockMvc.perform(get("/api/tasks").queryParam("completed", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(2))
+                .andExpect(jsonPath("$[0].completed").value(true));
+    }
+
+    @Test
+    void listFiltersByCompletedFalse() throws Exception {
+        Task t = new Task("todo", "", false);
+        t.setId(3L);
+        when(repository.findByCompleted(false)).thenReturn(List.of(t));
+
+        mockMvc.perform(get("/api/tasks").queryParam("completed", "false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(3))
+                .andExpect(jsonPath("$[0].completed").value(false));
+    }
+
+    @Test
+    void listReturns400ForInvalidCompletedParam() throws Exception {
+        mockMvc.perform(get("/api/tasks").queryParam("completed", "maybe"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void getByIdReturns404WhenMissing() throws Exception {
         when(repository.findById(eq(99L))).thenReturn(Optional.empty());
 

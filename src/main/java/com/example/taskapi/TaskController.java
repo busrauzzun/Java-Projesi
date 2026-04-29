@@ -19,8 +19,19 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> list() {
-        return service.findAll();
+    public List<Task> list(@RequestParam(required = false) String completed) {
+        if (completed == null) {
+            return service.findAll();
+        }
+
+        if (completed.equalsIgnoreCase("true")) {
+            return service.findAllByCompleted(true);
+        }
+        if (completed.equalsIgnoreCase("false")) {
+            return service.findAllByCompleted(false);
+        }
+
+        throw new BadRequestException("Invalid completed value: " + completed);
     }
 
     @GetMapping("/{id}")

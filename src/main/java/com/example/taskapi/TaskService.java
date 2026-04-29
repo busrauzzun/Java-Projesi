@@ -21,6 +21,10 @@ public class TaskService {
         return repository.findAll();
     }
 
+    public List<Task> findAllByCompleted(boolean completed) {
+        return repository.findByCompleted(completed);
+    }
+
     public Task findById(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
