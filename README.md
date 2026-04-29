@@ -119,6 +119,23 @@ Bu projede Swagger/OpenAPI bağımlılığı bulunmuyor (pom.xml’de `springdoc
 
 Base path: `/api/tasks`
 
+### Health Check
+
+- `GET /api/health`
+  - Servisin ayakta olduğunu doğrulamak için basit health endpoint’i.
+
+Örnek:
+
+```bash
+curl -i "http://localhost:8080/api/health"
+```
+
+Response:
+
+```json
+{"status":"UP"}
+```
+
 ### Model: `Task`
 
 Alanlar (entity):
