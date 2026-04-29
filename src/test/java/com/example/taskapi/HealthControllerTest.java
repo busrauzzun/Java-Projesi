@@ -24,4 +24,14 @@ class HealthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"));
     }
+
+    @Test
+    void healthV2ReturnsMetadata() throws Exception {
+        mockMvc.perform(get("/api/health/v2").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.appName").value("task-api"))
+                .andExpect(jsonPath("$.version").value("0.0.1-SNAPSHOT"));
+    }
 }

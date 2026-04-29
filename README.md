@@ -7,6 +7,7 @@ Spring Boot (Java 17) ile geliştirilmiş basit bir **Task CRUD REST API** (H2 i
 - Base URL: `http://localhost:8080`
 - Task API: `/api/tasks`
 - Health: `GET /api/health` → `{"status":"UP"}`
+- Health v2: `GET /api/health/v2` → `{"status":"UP","timestamp":"...","appName":"task-api","version":"0.0.1-SNAPSHOT"}`
 
 ## Gereksinimler
 
